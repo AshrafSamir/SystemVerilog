@@ -1,0 +1,119 @@
+module fpadd(input logic [31:0] a,b,
+                output logic [31:0] s);
+               
+    logic [7:0] expa, expb , exp_pre,exp,shamt;
+    logic alessb,signa,signb,sign;
+    logic [1:0]flag1;
+    logic flag2,flag3;		
+    logic [23:0] manta,mantb,shmant;
+    logic [22:0] fract;
+   
+    assign {signa, expa,manta} = {a[31],a[30:23],1'b1,a[22:0]};
+    assign {signb, expb,mantb} = {b[31],b[30:23],1'b1,b[22:0]};
+
+always_comb 
+	begin
+	 if((expa==255))begin
+		 exp = 8'b11111111;
+		 fract = 0;
+		 sign = signa;
+		end
+	else if((expb==255))begin
+		 exp = 8'b11111111;
+		 fract = 0;
+		 sign = signb;
+		end
+	else if((expb==255)&&((expa==255)))begin
+		 exp = 8'b11111111;
+		 fract = 0;
+		 sign = signb;
+		end
+	 if((manta==0))begin
+		 exp = expb;
+		 fract = mantb;
+		 sign = signb;
+		end
+	else if((mantb==0))begin
+		 exp = expa;
+		 fract = manta;
+		 sign = signa;
+		end
+	 if((expa==255)&&(manta!=0))begin
+		 exp = 8'b11111111;
+		 fract = manta;
+		 sign = signa;
+		end
+	 if((expb==255)&&(mantb!=0))begin
+		 exp = 8'b11111111;
+		 fract = mantb;
+		 sign = signb;
+		end
+	 end
+		assign s = {sign,exp,fract};	
+
+		expcomp expcomp1(expa, expb, alessb, exp_pre, shamt);
+    		shiftmant shiftmant1(alessb, manta, mantb, shamt, shmant);
+    		addmant addmant1(alessb, signa, signb, manta, mantb, shmant,exp_pre, fract, exp, sign);
+
+	
+
+
+endmodule
+ 
+
+module expcomp(input logic[7:0] expa, expb,
+                output logic alessb,
+                output logic[7:0] exp, shamt);
+   
+    logic[7:0] aminusb, bminusa;
+    assign aminusb = expa - expb;
+    assign bminusa = expb - expa;
+    assign alessb = aminusb[7];
+   
+    always_comb
+        if (alessb) begin
+            exp = expb;
+            shamt = bminusa;
+        end
+        else begin
+            exp = expa;
+            shamt = aminusb;
+        end
+endmodule
+ 
+
+module shiftmant(input logic alessb,
+                    input logic [23:0] manta, mantb,
+                    input logic [7:0] shamt,
+                    output logic [23:0] shmant);
+ 
+    logic [23:0] shiftedval;
+    assign shiftedval = alessb ? (manta >> shamt): (mantb >> shamt);
+ 
+    always_comb
+        if (shamt[7] | shamt[6] | shamt[5] | (shamt[4] & shamt[3]))
+            shmant = 24'b0;
+        else
+            shmant = shiftedval;
+endmodule
+ 
+module addmant(input logic alessb,signa,signb,
+                input logic[23:0] manta, mantb, shmant,
+                input logic[7:0] exp_pre,
+                output logic[22:0] fract,
+                output logic[7:0] exp,
+		output logic sign);
+   
+    logic[24:0] addresult;
+    logic[23:0] addval;
+
+    assign addval = alessb ? mantb : manta;
+    assign sign = alessb ? signb : signa;
+
+    assign addresult = (signa==signb)? shmant + addval : (shmant>addval)?shmant - addval : addval - shmant;
+  	
+    assign fract = addresult[24]?addresult[23:1]:addresult[22:0];
+    assign exp =(fract==0)?0: addresult[24]?(exp_pre + 1):exp_pre;
+	
+   
+endmodule

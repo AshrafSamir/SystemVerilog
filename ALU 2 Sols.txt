@@ -1,0 +1,132 @@
+
+module alu(
+           input logic [7:0] A,B,                  
+           input logic [3:0] Sel,
+           output logic [7:0] Out, 
+           output CarryF,
+	   output NegativeF,
+	   output EgualF,
+	   output LessThanF,
+	   output ZeroF,
+	   output OverFlowF			 				 
+    );
+    //Carry Flag		
+    wire [8:0] tmp;
+    wire [7:0] tmp1;
+    assign tmp1 =A>>1;
+    assign tmp = {1'b0,A} + {1'b0,B};
+    assign CarryF = (tmp[8]==1)?1:0; 
+    //OverFlow Flag
+    assign OverFlowF = (((A*B)>255)||((A+B)>255))?1:0; 
+    //Egual Flag
+    assign EgualF = (A==B)?1:0;
+    //Less Than Flag
+    assign LessThanF = (A<B)?1:0;
+    //Negative Flag
+    assign NegativeF = ((A<B)&&(Sel==4'b0001))?1:0;
+
+
+    always_comb
+    begin
+        case(Sel)
+        4'b0000: // Addition
+           Out = A + B ; 
+        4'b0001: // Subtraction
+           Out = A - B ;
+        4'b0010: // Multiplication
+           Out = A * B;
+        4'b0011: // Division
+           Out = A/B;
+        4'b0100: // Logical shift left
+           Out = A<<1;
+        4'b0101: // Logical shift right
+           Out = A>>1;
+        4'b0110: // Rotate left
+           Out = {A[6:0],A[7]};
+        4'b0111: // Mathmatical shift right
+           Out = {A[7],tmp1[6:0]};
+        4'b1000: //  Logical and 
+           Out = A & B;
+        4'b1001: //  Logical or
+           Out = A | B;
+        4'b1010: //  Logical xor 
+           Out = A ^ B;
+ 	4'b1011: // Invert A 
+           Out = ~A;
+          default: Out = A + B ; 
+        endcase
+    end
+    //Zero Flag
+    assign ZeroF = (Out==0)?1:0;
+
+endmodule
+
+
+module ALU(
+           input logic [7:0] A,B,                  
+           input logic [3:0] Sel,
+           output logic [7:0] Out, 
+           output CarryF,
+	   output NegativeF,
+	   output EgualF,
+	   output LessThanF,
+	   output ZeroF,
+	   output OverFlowF			 				 
+    );
+    //Carry Flag		
+    wire [8:0] tmp;
+    wire [7:0] tmp1,tmp2,tmp3;
+    assign tmp1 =A>>1;
+    assign tmp = {1'b0,A} + {1'b0,B};
+    assign CarryF = (tmp[8]==1)?1:0; 
+    //OverFlow Flag
+    assign tmp2 = A+B;
+    assign tmp3 = A-B;
+    assign OverFlowF = (((Sel==0000)&&(tmp2[7]!=A[7])&&(A[7]==B[7]))||((Sel==0001)&&(tmp3[7]!=A[7])&&(A[7]!=B[7])))?1:0; 
+    //Egual Flag
+    assign EgualF = (A==B)?1:0;
+    //Less Than Flag
+    assign LessThanF = (A<B)?1:0;
+    //Negative Flag
+    //assign NegativeF = ((A<B)&&(Sel==4'b0001))?1:0;
+
+
+    always_comb
+    begin
+        case(Sel)
+        4'b0000: // Addition
+          assign Out = A + B ;
+	4'b0001: // Subtraction
+          assign Out = A - B ;
+        4'b0010: // Multiplication
+          assign Out = A * B;
+        4'b0011: // Division
+          assign Out = A/B;
+        4'b0100: // Logical shift left
+          assign Out = A<<1;
+        4'b0101: // Logical shift right
+          assign Out = A>>1;
+        4'b0110: // Rotate left
+          assign Out = {A[6:0],A[7]};
+        4'b0111: // Mathmatical shift right
+          assign Out = {A[7],tmp1[6:0]};
+        4'b1000: //  Logical and 
+          assign Out = A & B;
+        4'b1001: //  Logical or
+          assign Out = A | B;
+        4'b1010: //  Logical xor 
+          assign Out = A ^ B;
+ 	4'b1011: // Invert A 
+          assign Out = ~A;
+          default: assign Out = A + B ; 
+        endcase
+    end
+    //Zero Flag
+    assign ZeroF = (Out==0)?1:0;
+    //Negative Flag
+    assign NegativeF = Out[7];
+   	
+
+
+
+endmodule
